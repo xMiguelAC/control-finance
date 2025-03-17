@@ -2,7 +2,8 @@
  
 import * as React from "react"
 
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
+// import { useRouter } from 'next/router';
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -44,8 +45,6 @@ import ExpenseForm from "./ExpenseForm";
 
 
 
-
-
 function Iandeview() {
   const [dateI, setDateI] = React.useState<Date>()
   const [dateE, setDateE] = React.useState<Date>()
@@ -59,24 +58,6 @@ function Iandeview() {
   const [totalAmountE, setTotalAmountE] = React.useState("")
   const [paymentMethodE,setPaymentMethodE] = React.useState("")
   const [titleE, setTitleE] = React.useState("")
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-
-  
-
-  const generateUniqueInvoice = async () => {
-    const res = await fetch('/api/expenses');
-    console.log(res) // Llamamos a la API
-    const data = await res.json();
-    console.log(data)
-    
-    const lastInvoiceNumber = data.lastInvoice ? parseInt(data.lastInvoice.replace('EXP', '')) : 0;
-    console.log(lastInvoiceNumber)
-    return `EXP${String(lastInvoiceNumber + 1).padStart(3, '0')}`; // EXP001, EXP002...
-  };
-
-
 
   const handleAddInc = () => {
 
@@ -159,178 +140,72 @@ function Iandeview() {
 
 // codigo de claude ----------------------------------------------------------------------------------------
 
-const [formData, setFormData] = useState({
-  invoice: '',
-  category: '',
-  totalAmount: '',
-  paymentMethod: '',
-  title: '',
-  date: new Date().toISOString().split('T')[0]
-});
+// const router = useRouter();
+  const [formData, setFormData] = useState({
+    invoice: '',
+    category: '',
+    totalAmount: '',
+    paymentMethod: '',
+    title: '',
+    date: new Date().toISOString().split('T')[0]
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-const [error, setError] = useState('');
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-const handleChangeSelectA = (val) => {
-  console.log(val)
-  const e = { target: { name: "paymentMethod", value: val } };
-  handleChange(e);
-}
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
 
-const handleChangeSelectC = (val) => {
-  console.log(val)
-  const e = { target: { name: "category", value: val } };
-  handleChange(e);
-}
+    try {
+      const res = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Si tienes un sistema de autenticación, añade el token aquí
+          // 'Authorization': `Bearer ${token}`,
+          'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
+        },
+        body: JSON.stringify({
+          ...formData,
+          date: new Date(formData.date)
+        })
+      });
 
-const handleChange = (e) => {
-  console.log(e)
-  const { name, value } = e.target;
-  setFormData(prev => ({
-    ...prev,
-    [name]: value
-  }));
-  console.log(formData)
-};
+      const data = await res.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Error al guardar el gasto');
+      }
 
-const isSubmittingRef = useRef(false);
+      // Restablecer el formulario
+      setFormData({
+        invoice: '',
+        category: '',
+        totalAmount: '',
+        paymentMethod: '',
+        title: '',
+        date: new Date().toISOString().split('T')[0]
+      });
 
-// const handleSubmitE = async (e) => {
-//   e.preventDefault();
-//   if (isSubmittingRef.current) return; // Evita doble ejecución
-//   isSubmittingRef.current = true;
-//   setError('');
-
-//   const uniqueInvoice = await generateUniqueInvoice();
-
-//   setFormData(prev => {
-//       const updatedFormData = {
-//         ...prev,
-//         invoice: uniqueInvoice
-//       };
-  
-//       // Llamamos a la función de envío después de actualizar el estado
-//       submitExpenseAsync(updatedFormData);
-//       return updatedFormData;
-//     });
-  
-//     const submitExpenseAsync = async (updatedFormData) => {
-//       try {
-//         await submitExpense({ ...updatedFormData, invoice: uniqueInvoice });
-//       } finally {
-//         isSubmittingRef.current = false; // Permite nuevas solicitudes
-//       }
-//     };
-// };
-
-const handleSubmitE = useCallback(async (e) => {
-  e.preventDefault();
-  if (isSubmittingRef.current) return;
-  isSubmittingRef.current = true;
-
-  setError('');
-  const uniqueInvoice = await generateUniqueInvoice();
-
-  setFormData(prev => ({ ...prev, invoice: uniqueInvoice }));
-  console.log(formData)
-
-  try {
-    await submitExpense({ ...formData, invoice: uniqueInvoice });
-  } finally {
-    isSubmittingRef.current = false;
-  }
-}, [formData]);
-
-// agregar lo mismo de add expenses a los incomes
-
-const submitExpense = async (formData) => {
-  try {
-    const res = await fetch('/api/expenses', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
-      },
-      body: JSON.stringify({
-        ...formData,
-        date: new Date(formData.date)
-      })
-    });
-
-    const data = await res.json();
-    
-    if (!data.success) {
-      throw new Error(data.message || 'Error al guardar el gasto');
+      // Redireccionar o mostrar mensaje de éxito
+      alert('Gasto guardado correctamente');
+      // Opcional: redireccionar a la lista de gastos
+      // router.push('/expenses');
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Restablecer el formulario
-    setFormData({
-      invoice: '',
-      category: '',
-      totalAmount: '',
-      paymentMethod: '',
-      title: '',
-      date: new Date().toISOString().split('T')[0]
-    });
-
-    // Redireccionar o mostrar mensaje de éxito
-    alert('Gasto guardado correctamente');
-
-  } catch (error) {
-    setError(error.message);
-  }
-};
-
-
-// incomes submit -------------------------------------------------------------------------
-
-const handleSubmitI = async (e) => {
-  e.preventDefault();
-  setError('');
-
-
-
-
-  console.log(formData)
-
-  try {
-    const res = await fetch('/api/incomes', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
-      },
-      body: JSON.stringify({
-        ...formData,
-        date: new Date(formData.date)
-      })
-    });
-
-    const data = await res.json();
-    
-    if (!data.success) {
-      throw new Error(data.message || 'Error al guardar el gasto');
-    }
-
-    // Restablecer el formulario
-    setFormData({
-      invoice: '',
-      category: '',
-      totalAmount: '',
-      paymentMethod: '',
-      title: '',
-      date: new Date().toISOString().split('T')[0]
-    });
-
-    // Redireccionar o mostrar mensaje de éxito
-    alert('Gasto guardado correctamente');
-
-  } catch (error) {
-    setError(error.message);
-  }
-};
-
-
-
+  };
 
   // final del codigo -------------------------------------------------------------------------------------
 
@@ -398,7 +273,7 @@ const handleSubmitI = async (e) => {
           </CardHeader>
           <CardContent>
           {/* codigo de claude */}
-          <form onSubmit={handleSubmitI}>
+          <form onSubmit={handleSubmit}>
           {/* <form> */}
               <div className="grid w-full items-center gap-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -475,9 +350,7 @@ const handleSubmitI = async (e) => {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" onClick={() => handleClear("I")}>Clear</Button>
-            {/* <Button onClick={handleAddInc} >Add</Button> */}
-            <Button onClick={handleSubmitI} type="submit">Add</Button>
-            <Button onClick={generateUniqueInvoice} type="submit">generate unique id</Button>
+            <Button onClick={handleAddInc} >Add</Button>
           </CardFooter>
         </Card>
 
@@ -506,30 +379,29 @@ const handleSubmitI = async (e) => {
             <CardDescription>share all type of expenses that come out of you.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmitE}>
+            <form>
               <div className="grid w-full items-center gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="titleE">Title</Label>
                    {/* codigo de claude */}
-                    <Input id="titleE" name="title" placeholder="name of source income." value={formData.title}
+                    <Input id="titleE" placeholder="name of source income." value={formData.title}
             onChange={handleChange} />
                     {/* <Input id="titleE" placeholder="name of source income." onChange={(e) => {setTitleE(e.target.value)}} /> */}
                   </div>
                   <div>
                     <Label htmlFor="amountE">Amount</Label>
                                  {/* codigo de claude */}
-                    <Input id="amountE" name="totalAmount" placeholder="quantity of income." value={formData.totalAmount}
+                    <Input id="amountE" placeholder="quantity of income." value={formData.totalAmount}
             onChange={handleChange} />
                     {/* <Input id="amountE" placeholder="quantity of income." onChange={(e) => {setTotalAmountE(e.target.value)}} /> */}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-
                   <div>
                     <Label htmlFor="accountE">Account</Label>
-                    <Select name="paymentMethod"  value={formData.paymentMethod} onValueChange={handleChangeSelectA}>
-                      <SelectTrigger id="accountE" name="paymentMethod" >
+                    <Select value={paymentMethodE} onValueChange={(value) => setPaymentMethodE(value)}>
+                      <SelectTrigger id="accountE">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent position="popper">
@@ -541,33 +413,26 @@ const handleSubmitI = async (e) => {
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div>
                     <Label htmlFor="categoryE">Category</Label>
-                    <Select id="category" name="category" value={formData.category} onValueChange={handleChangeSelectC}>
-                    {/* <Select value={categoryE} onValueChange={(value) => setCategoryE(value)}> */}
+                    <Select value={categoryE} onValueChange={(value) => setCategoryE(value)}>
                       <SelectTrigger id="categoryE">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent position="popper">
-                        <SelectItem value="supermercado">Supermercado</SelectItem>
-                        <SelectItem value="farmacia">Farmacia</SelectItem>
-                        <SelectItem value="comidaout">Comida fuera</SelectItem>
-                        <SelectItem value="combustible">Combustible</SelectItem>
+                        <SelectItem value="supermercado">supermercado</SelectItem>
+                        <SelectItem value="farmacia">farmacia</SelectItem>
+                        <SelectItem value="comidaout">comida fuera</SelectItem>
+                        <SelectItem value="combustible">combustible</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div className="flex flex-col justify-between">
                     <Label htmlFor="dateE">Date</Label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        {/* id="date" */}
                         <Button
                         id="dateE"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleChange}
                           variant={"outline"}
                           className={cn(
                             "justify-start text-left font-normal",
@@ -588,14 +453,21 @@ const handleSubmitI = async (e) => {
                       </PopoverContent>
                     </Popover>
                   </div>
-
                 </div>
               </div>
             </form>
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" onClick={() => handleClear("E")}>Clear</Button>
-            <Button onClick={handleSubmitE} type="submit">Add</Button>
+             {/* codigo de claude */}
+             <button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-blue-300"
+            >
+              {isSubmitting ? 'Guardando...' : 'Guardar Gasto'}
+            </button>
+            <Button onClick={handleAddExp}>Add</Button>
           </CardFooter>
         </Card>
 

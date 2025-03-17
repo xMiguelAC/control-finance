@@ -1,4 +1,4 @@
-import React from 'react'
+import { useState, useEffect } from 'react'
 import Cardmonth from './cardmonth'
 
 const months = [
@@ -27,9 +27,59 @@ const months = [
     { month: "November", income: 6200, expense: 3400 },
     { month: "December", income: 7000, expense: 3800 },
 ]
-  
+
+
+
 
 function Monthlycard() {
+
+  // const [expenses, setExpenses] = useState([]);
+  // const [isLoading, setIsLoading] = useState(true);
+  // const [error, setError] = useState('');
+  // const [totalexp, setTotalExp] = useState(0);
+
+
+  // useEffect(() => {
+  //   const fetchExpenses = async () => {
+  //     try {
+
+  //       const res = await fetch('/api/expenses');
+  //           console.log("Response Status:", res.status);
+  //           const contentType = res.headers.get("content-type");
+            
+  //           if (!contentType || !contentType.includes("application/json")) {
+  //               const text = await res.text(); // Obtener texto para debug
+  //               throw new Error(`Respuesta no es JSON: ${text}`);
+  //           }
+        
+  //       const data = await res.json();
+  //       console.log("Data:", data)
+        
+  //       if (!data.success) {
+  //         throw new Error(data.message || 'Error al obtener los gastos');
+  //       }
+        
+  //       setExpenses(data.data);
+  //       setTotalExp(data.total);
+
+  //     } catch (error) {
+  //       setError(error.message);
+  //       console.log("Fetch error:", error.message)
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+    
+  //   fetchExpenses();
+  // }, []);
+
+
+
+
+
+
+
+
   return (
     <div className="grid grid-cols-4 gap-8 my-8 w-full">
 
