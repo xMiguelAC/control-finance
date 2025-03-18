@@ -33,6 +33,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
+// import  fetchExpenses  from "./ExpenseList";
 import ExpenseList from "./ExpenseList";
 import IncomeList from "./IncomeList";
 import ExpenseForm from "./ExpenseForm";
@@ -65,15 +66,33 @@ function Iandeview() {
 
   
 
-  const generateUniqueInvoice = async () => {
-    const res = await fetch('/api/expenses');
+  const generateUniqueInvoice = async (typeofinvoice: string) => {
+
+    let final;
+    let res;
+    let lastInvoiceNumber;
+    
+    if(typeofinvoice === "expenses") {
+    res = await fetch('/api/expenses');
+    } else {
+      res = await fetch('/api/incomes');
+    }
+
     console.log(res) // Llamamos a la API
     const data = await res.json();
     console.log(data)
+
+    if(typeofinvoice === "expenses") {
+      lastInvoiceNumber = data.lastInvoice ? parseInt(data.lastInvoice.replace('EXP', '')) : 0;
+      final = `EXP${String(lastInvoiceNumber + 1).padStart(3, '0')}`;
+      } else {
+        lastInvoiceNumber = data.lastInvoice ? parseInt(data.lastInvoice.replace('INC', '')) : 0;
+        final = `INC${String(lastInvoiceNumber + 1).padStart(3, '0')}`;
+      }
     
-    const lastInvoiceNumber = data.lastInvoice ? parseInt(data.lastInvoice.replace('EXP', '')) : 0;
     console.log(lastInvoiceNumber)
-    return `EXP${String(lastInvoiceNumber + 1).padStart(3, '0')}`; // EXP001, EXP002...
+
+    return final; // EXP001, EXP002...
   };
 
 
@@ -159,7 +178,25 @@ function Iandeview() {
 
 // codigo de claude ----------------------------------------------------------------------------------------
 
-const [formData, setFormData] = useState({
+// const [formData, setFormData] = useState({
+//   invoice: '',
+//   category: '',
+//   totalAmount: '',
+//   paymentMethod: '',
+//   title: '',
+//   date: new Date().toISOString().split('T')[0]
+// });
+
+const [formDataI, setFormDataI] = useState({
+  invoice: '',
+  category: '',
+  totalAmount: '',
+  paymentMethod: '',
+  title: '',
+  date: new Date().toISOString().split('T')[0]
+});
+
+const [formDataE, setFormDataE] = useState({
   invoice: '',
   category: '',
   totalAmount: '',
@@ -170,57 +207,83 @@ const [formData, setFormData] = useState({
 
 const [error, setError] = useState('');
 
-const handleChangeSelectA = (val) => {
+const handleChangeSelectAI = (val) => {
   console.log(val)
   const e = { target: { name: "paymentMethod", value: val } };
-  handleChange(e);
-}
-
-const handleChangeSelectC = (val) => {
-  console.log(val)
-  const e = { target: { name: "category", value: val } };
-  handleChange(e);
-}
-
-const handleChange = (e) => {
   console.log(e)
+  
+  handleChangeI(e);
+}
+
+const handleChangeSelectAE = (val) => {
+  console.log(val)
+  const e = { target: { name: "paymentMethod", value: val } };
+  console.log(e)
+  
+  handleChangeE(e);
+}
+
+const handleChangeSelectCE = (val) => {
+  console.log(val)
+  // console.log(val.target.id)
+  const e = { target: { name: "category", value: val } };
+
+  handleChangeE(e);
+}
+
+const handleChangeSelectCI = (val) => {
+  console.log(val)
+  // console.log(val.target.id)
+  const e = { target: { name: "category", value: val } };
+
+  handleChangeI(e);
+  }
+
+
+const handleChangeI = (e) => {
+  console.log(e)
+  // console.log(e.target.form.id)
   const { name, value } = e.target;
-  setFormData(prev => ({
+  // const form = e.target.form.id;
+  setFormDataI(prev => ({
     ...prev,
     [name]: value
   }));
-  console.log(formData)
+  // console.log(form)
+};
+
+const handleChangeE = (e) => {
+  console.log(e)
+  // console.log(e.target.form.id)
+  const { name, value } = e.target;
+  // const form = e.target.form.id;
+  setFormDataE(prev => ({
+    ...prev,
+    [name]: value
+  }));
+  // console.log(form)
 };
 
 const isSubmittingRef = useRef(false);
 
-// const handleSubmitE = async (e) => {
-//   e.preventDefault();
-//   if (isSubmittingRef.current) return; // Evita doble ejecución
-//   isSubmittingRef.current = true;
-//   setError('');
+const handleSubmitI = useCallback(async (e) => {
+  e.preventDefault();
+  if (isSubmittingRef.current) return;
+  isSubmittingRef.current = true;
 
-//   const uniqueInvoice = await generateUniqueInvoice();
+  setError('');
+  const uniqueInvoice = await generateUniqueInvoice(e.target.id);
 
-//   setFormData(prev => {
-//       const updatedFormData = {
-//         ...prev,
-//         invoice: uniqueInvoice
-//       };
-  
-//       // Llamamos a la función de envío después de actualizar el estado
-//       submitExpenseAsync(updatedFormData);
-//       return updatedFormData;
-//     });
-  
-//     const submitExpenseAsync = async (updatedFormData) => {
-//       try {
-//         await submitExpense({ ...updatedFormData, invoice: uniqueInvoice });
-//       } finally {
-//         isSubmittingRef.current = false; // Permite nuevas solicitudes
-//       }
-//     };
-// };
+  setFormDataI(prev => ({ ...prev, invoice: uniqueInvoice }));
+  console.log(formDataI)
+
+    try {
+      await submitIncome({ ...formDataI, invoice: uniqueInvoice });
+    } finally {
+      isSubmittingRef.current = false;
+    }
+
+}, [formDataI]);
 
 const handleSubmitE = useCallback(async (e) => {
   e.preventDefault();
@@ -228,21 +291,25 @@ const handleSubmitE = useCallback(async (e) => {
   isSubmittingRef.current = true;
 
   setError('');
-  const uniqueInvoice = await generateUniqueInvoice();
+  const uniqueInvoice = await generateUniqueInvoice(e.target.id);
 
-  setFormData(prev => ({ ...prev, invoice: uniqueInvoice }));
-  console.log(formData)
+  setFormDataE(prev => ({ ...prev, invoice: uniqueInvoice }));
+  console.log(formDataE)
 
-  try {
-    await submitExpense({ ...formData, invoice: uniqueInvoice });
-  } finally {
-    isSubmittingRef.current = false;
-  }
-}, [formData]);
 
-// agregar lo mismo de add expenses a los incomes
+    try {
+      await submitExpense({ ...formDataE, invoice: uniqueInvoice });
+    } finally {
+      isSubmittingRef.current = false;
+      // fetchExpenses();
+    }
 
-const submitExpense = async (formData) => {
+
+}, [formDataE]);
+
+// next step: que se actualice las tablas al agregar uno nuevo.
+
+const submitExpense = async (formDataE) => {
   try {
     const res = await fetch('/api/expenses', {
       method: 'POST',
@@ -251,8 +318,8 @@ const submitExpense = async (formData) => {
         'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
       },
       body: JSON.stringify({
-        ...formData,
-        date: new Date(formData.date)
+        ...formDataE,
+        date: new Date(formDataE.date)
       })
     });
 
@@ -263,7 +330,7 @@ const submitExpense = async (formData) => {
     }
 
     // Restablecer el formulario
-    setFormData({
+    setFormDataE({
       invoice: '',
       category: '',
       totalAmount: '',
@@ -283,15 +350,7 @@ const submitExpense = async (formData) => {
 
 // incomes submit -------------------------------------------------------------------------
 
-const handleSubmitI = async (e) => {
-  e.preventDefault();
-  setError('');
-
-
-
-
-  console.log(formData)
-
+const submitIncome = async (formDataI) => {
   try {
     const res = await fetch('/api/incomes', {
       method: 'POST',
@@ -300,8 +359,8 @@ const handleSubmitI = async (e) => {
         'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
       },
       body: JSON.stringify({
-        ...formData,
-        date: new Date(formData.date)
+        ...formDataI,
+        date: new Date(formDataI.date)
       })
     });
 
@@ -312,7 +371,7 @@ const handleSubmitI = async (e) => {
     }
 
     // Restablecer el formulario
-    setFormData({
+    setFormDataI({
       invoice: '',
       category: '',
       totalAmount: '',
@@ -328,6 +387,50 @@ const handleSubmitI = async (e) => {
     setError(error.message);
   }
 };
+
+
+// const handleSubmitI = async (e) => {
+//   e.preventDefault();
+//   setError('');
+
+//   console.log(formData)
+
+//   try {
+//     const res = await fetch('/api/incomes', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
+//       },
+//       body: JSON.stringify({
+//         ...formData,
+//         date: new Date(formData.date)
+//       })
+//     });
+
+//     const data = await res.json();
+    
+//     if (!data.success) {
+//       throw new Error(data.message || 'Error al guardar el gasto');
+//     }
+
+//     // Restablecer el formulario
+//     setFormData({
+//       invoice: '',
+//       category: '',
+//       totalAmount: '',
+//       paymentMethod: '',
+//       title: '',
+//       date: new Date().toISOString().split('T')[0]
+//     });
+
+//     // Redireccionar o mostrar mensaje de éxito
+//     alert('Gasto guardado correctamente');
+
+//   } catch (error) {
+//     setError(error.message);
+//   }
+// };
 
 
 
@@ -398,24 +501,24 @@ const handleSubmitI = async (e) => {
           </CardHeader>
           <CardContent>
           {/* codigo de claude */}
-          <form onSubmit={handleSubmitI}>
+          <form onSubmit={handleSubmitI} id="formI">
           {/* <form> */}
               <div className="grid w-full items-center gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="titleI">Title</Label>
-                    <Input id="titleI" placeholder="name of source income." onChange={(e) => {setTitleI(e.target.value)}}/>
+                    <Input id="titleI" name="title" placeholder="name of source income." onChange={handleChangeI} value={formDataI.title}/>
                   </div>
                   <div>
                     <Label htmlFor="amountI">Amount</Label>
-                    <Input id="amountI" placeholder="quantity of income." onChange={(e) => {setTotalAmountI(e.target.value)}} />
+                    <Input id="amountI" name="totalAmount" placeholder="quantity of income." onChange={handleChangeI} value={formDataI.totalAmount}/>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                 <div>
                     <Label htmlFor="account">Account</Label>
-                    <Select value={paymentMethodI} onValueChange={(value) => setPaymentMethodI(value)}>
-                      <SelectTrigger id="account">
+                    <Select name="paymentMethod" id="accountI" value={formDataI.paymentMethod} onValueChange={handleChangeSelectAI}>
+                      <SelectTrigger id="account" name="paymentMethod">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent position="popper">
@@ -429,7 +532,7 @@ const handleSubmitI = async (e) => {
                   </div>
                   <div>
                     <Label htmlFor="categoryI">Category</Label>
-                    <Select value={categoryI} onValueChange={(value) => setCategoryI(value)}>
+                    <Select name="category" id="categoryI" value={formDataI.category} onValueChange={handleChangeSelectCI}>
                       <SelectTrigger >
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
@@ -449,6 +552,8 @@ const handleSubmitI = async (e) => {
                       <PopoverTrigger asChild>
                         <Button
                           id="dateI"
+                          value={formDataI.date}
+                          onChange={handleChangeI}
                           variant={"outline"}
                           className={cn(
                             "justify-start text-left font-normal",
@@ -476,8 +581,7 @@ const handleSubmitI = async (e) => {
           <CardFooter className="flex justify-between">
             <Button variant="outline" onClick={() => handleClear("I")}>Clear</Button>
             {/* <Button onClick={handleAddInc} >Add</Button> */}
-            <Button onClick={handleSubmitI} type="submit">Add</Button>
-            <Button onClick={generateUniqueInvoice} type="submit">generate unique id</Button>
+            <Button onClick={handleSubmitI} type="submit" id="incomes">Add</Button>
           </CardFooter>
         </Card>
 
@@ -506,21 +610,21 @@ const handleSubmitI = async (e) => {
             <CardDescription>share all type of expenses that come out of you.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmitE}>
+            <form onSubmit={handleSubmitE} id="formE">
               <div className="grid w-full items-center gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="titleE">Title</Label>
                    {/* codigo de claude */}
-                    <Input id="titleE" name="title" placeholder="name of source income." value={formData.title}
-            onChange={handleChange} />
+                    <Input id="titleE" name="title" placeholder="name of source income." value={formDataE.title}
+            onChange={handleChangeE} />
                     {/* <Input id="titleE" placeholder="name of source income." onChange={(e) => {setTitleE(e.target.value)}} /> */}
                   </div>
                   <div>
                     <Label htmlFor="amountE">Amount</Label>
                                  {/* codigo de claude */}
-                    <Input id="amountE" name="totalAmount" placeholder="quantity of income." value={formData.totalAmount}
-            onChange={handleChange} />
+                    <Input id="amountE" name="totalAmount" placeholder="quantity of income." value={formDataE.totalAmount}
+            onChange={handleChangeE} />
                     {/* <Input id="amountE" placeholder="quantity of income." onChange={(e) => {setTotalAmountE(e.target.value)}} /> */}
                   </div>
                 </div>
@@ -528,7 +632,7 @@ const handleSubmitI = async (e) => {
 
                   <div>
                     <Label htmlFor="accountE">Account</Label>
-                    <Select name="paymentMethod"  value={formData.paymentMethod} onValueChange={handleChangeSelectA}>
+                    <Select name="paymentMethod"  value={formDataE.paymentMethod} onValueChange={handleChangeSelectAE}>
                       <SelectTrigger id="accountE" name="paymentMethod" >
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
@@ -544,7 +648,7 @@ const handleSubmitI = async (e) => {
 
                   <div>
                     <Label htmlFor="categoryE">Category</Label>
-                    <Select id="category" name="category" value={formData.category} onValueChange={handleChangeSelectC}>
+                    <Select id="category" name="category" value={formDataE.category} onValueChange={handleChangeSelectCE}>
                     {/* <Select value={categoryE} onValueChange={(value) => setCategoryE(value)}> */}
                       <SelectTrigger id="categoryE">
                         <SelectValue placeholder="Select" />
@@ -566,8 +670,8 @@ const handleSubmitI = async (e) => {
                         <Button
                         id="dateE"
                         name="date"
-                        value={formData.date}
-                        onChange={handleChange}
+                        value={formDataE.date}
+                        onChange={handleChangeE}
                           variant={"outline"}
                           className={cn(
                             "justify-start text-left font-normal",
@@ -595,7 +699,7 @@ const handleSubmitI = async (e) => {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" onClick={() => handleClear("E")}>Clear</Button>
-            <Button onClick={handleSubmitE} type="submit">Add</Button>
+            <Button onClick={handleSubmitE} type="submit" id="expenses">Add</Button>
           </CardFooter>
         </Card>
 

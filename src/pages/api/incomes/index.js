@@ -13,10 +13,14 @@ export default async function handler(req, res) {
       const total = await Income.aggregate([
         { $group: { _id: null, total: { $sum: "$totalAmount" } } }
       ]);
+
+      const lastIncome = await Income.findOne({}, 'invoice')
+              .sort({ invoice: -1 }) // Ordena en orden descendente
+              .lean();
       
       const incomes = await Income.find().sort({ date: -1 });
       // const expenses = await Expense.find({ userId }).sort({ date: -1 });
-      return res.status(200).json({ success: true, data: incomes, total: total[0]?.total || 0 });
+      return res.status(200).json({ success: true, data: incomes, total: total[0]?.total || 0, lastInvoice: lastIncome?.invoice || 'INC000'  });
 
       
       
