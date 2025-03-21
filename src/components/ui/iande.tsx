@@ -61,6 +61,9 @@ function Iandeview() {
   const [paymentMethodE,setPaymentMethodE] = React.useState("")
   const [titleE, setTitleE] = React.useState("")
 
+  const [refreshKeyI, setRefreshKeyI] = useState(0);
+  const [refreshKeyE, setRefreshKeyE] = useState(0);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
 
@@ -275,6 +278,7 @@ const handleSubmitI = useCallback(async (e) => {
   const uniqueInvoice = await generateUniqueInvoice(e.target.id);
 
   setFormDataI(prev => ({ ...prev, invoice: uniqueInvoice }));
+  setRefreshKeyI(prevKey => prevKey + 1);
   console.log(formDataI)
 
     try {
@@ -294,6 +298,7 @@ const handleSubmitE = useCallback(async (e) => {
   const uniqueInvoice = await generateUniqueInvoice(e.target.id);
 
   setFormDataE(prev => ({ ...prev, invoice: uniqueInvoice }));
+  setRefreshKeyE(prevKey => prevKey + 1);
   console.log(formDataE)
 
 
@@ -586,7 +591,7 @@ const submitIncome = async (formDataI) => {
         </Card>
 
         {/* table */}
-        <IncomeList />
+        <IncomeList key={refreshKeyI} />
 
 
         </div>
@@ -705,8 +710,8 @@ const submitIncome = async (formDataI) => {
 
         
 
-        <ExpenseList />
-        <ExpenseForm />
+        <ExpenseList key={refreshKeyE}/>
+        
 
         </div>
 
