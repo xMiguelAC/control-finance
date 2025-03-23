@@ -117,7 +117,7 @@ export default function ExpenseList() {
                 <TableCell>{expense.category}</TableCell>
                 <TableCell className="text-right">{expense.date.split("T")[0]}</TableCell>
                 <TableCell className="text-right"><Button variant="outline">Edit</Button></TableCell>
-                <TableCell className="text-right"><Button variant="outline">Delete</Button></TableCell>
+                <TableCell className="text-right"><Button variant="outline" onClick={() => deleteExpense(expense._id)}>Delete</Button></TableCell>
               </TableRow>
             ))}
           </TableBody>

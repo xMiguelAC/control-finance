@@ -16,14 +16,17 @@ import {
 import { Button } from "@/components/ui/button"
 
 
-export default function IncomeList() {
-  const [expenses, setExpenses] = useState([]);
+export default function IncomeList( {onEditIncome} ) {
+  const [incomes, setIncomes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [totalexp, setTotalExp] = useState(0);
+  const [EditingId, setEditingId] = useState(0);
+
+  // const [dataforParent, setdataforParent] = useState();
 
   useEffect(() => {
-    const fetchExpenses = async () => {
+    const fetchIncomes = async () => {
       try {
         const res = await fetch('/api/incomes');
         // console.log(res)
@@ -34,7 +37,7 @@ export default function IncomeList() {
           throw new Error(data.message || 'Error al obtener los gastos');
         }
         
-        setExpenses(data.data);
+        setIncomes(data.data);
         setTotalExp(data.total);
 
       } catch (error) {
@@ -45,7 +48,7 @@ export default function IncomeList() {
       }
     };
     
-    fetchExpenses();
+    fetchIncomes();
   }, []);
 
   const formatDate = (dateString) => {
@@ -53,10 +56,10 @@ export default function IncomeList() {
     return date.toLocaleDateString();
   };
 
-  const deleteExpense = async (id) => {
-    if (confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
+  const deleteIncome = async (id) => {
+    if (confirm('¿Estás seguro de que deseas eliminar este ingreso?')) {
       try {
-        const res = await fetch(`/api/expenses/${id}`, {
+        const res = await fetch(`/api/incomes/${id}`, {
           method: 'DELETE',
           headers: {
             // Si tienes un sistema de autenticación, añade el token aquí
@@ -67,16 +70,98 @@ export default function IncomeList() {
         const data = await res.json();
         
         if (!data.success) {
-          throw new Error(data.message || 'Error al eliminar el gasto');
+          throw new Error(data.message || 'Error al eliminar el ingreso');
         }
         
         // Actualizar la lista de gastos
-        setExpenses(expenses.filter(expense => expense._id !== id));
+        setIncomes(incomes.filter(income => income._id !== id));
       } catch (error) {
         setError(error.message);
       }
     }
   };
+
+
+  const editIncome = async (id, updatedData) => {
+    try {
+      const res = await fetch(`/api/incomes/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'user-id': "default-user-123"
+        },
+        body: JSON.stringify(updatedData) // Enviar los datos actualizados
+      });
+  
+      const data = await res.json();
+  
+      if (!data.success) {
+        throw new Error(data.message || 'Error al actualizar el ingreso');
+      }
+  
+      // Actualizar la lista de ingresos en el estado
+      setIncomes(incomes.map(income => income._id === id ? data.data : income));
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  const dataFromSon = async (id) => {
+    try {
+      // Obtener los datos actuales
+      const res = await fetch(`/api/incomes/${id}`);
+      const data = await res.json();
+  
+      if (!data.success) {
+        throw new Error('Error al obtener los datos del ingreso');
+      }
+      console.log(data.data)
+      setforParent(data.data)
+
+      const datos = {
+        invoice: '',
+        category: '',
+        totalAmount: '',
+        paymentMethod: '',
+        title: '',
+        date: new Date().toISOString().split('T')[0]
+      };
+
+      return datos;
+  
+      // Mostrar los datos en un formulario/modal
+      // setFormDataI(data.data);
+      // setEditingId(id); // Guardar el ID para saber cuál se está editando
+      // setShowModal(true); // Mostrar modal de edición
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+
+  const dataForParents = async (id) => {
+    try {
+      // Obtener los datos actuales
+      const res = await fetch(`/api/incomes/${id}`);
+      const data = await res.json();
+  
+      if (!data.success) {
+        throw new Error('Error al obtener los datos del ingreso');
+      }
+  
+      // Mostrar los datos en un formulario/modal
+      console.log(id); // Guardar el ID para saber cuál se está editando
+      console.log(data.data)
+      // setdataforParent(data.data)
+      return dataforParent;
+      
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  
+
 
   if (isLoading) return <div className="text-center mt-10">Loading Incomes...</div>;
   if (error) return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
@@ -98,16 +183,16 @@ export default function IncomeList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {expenses.map((expense) => (
-              <TableRow key={expense.invoice}>
+            {incomes.map((income) => (
+              <TableRow key={income.invoice}>
                 {/* <TableCell className="font-medium">{invoice.invoice}</TableCell> */}
-                <TableCell className="text-right">RD$ {expense.totalAmount}</TableCell>
-                <TableCell>{expense.title}</TableCell>
-                <TableCell>{expense.paymentMethod}</TableCell>
-                <TableCell>{expense.category}</TableCell>
-                <TableCell className="text-right">{expense.date.split("T")[0]}</TableCell>
-                <TableCell className="text-right"><Button variant="outline">Edit</Button></TableCell>
-                <TableCell className="text-right"><Button variant="outline">Delete</Button></TableCell>
+                <TableCell className="text-right">RD$ {income.totalAmount}</TableCell>
+                <TableCell>{income.title}</TableCell>
+                <TableCell>{income.paymentMethod}</TableCell>
+                <TableCell>{income.category}</TableCell>
+                <TableCell className="text-right">{income.date.split("T")[0]}</TableCell>
+                <TableCell className="text-right"><Button variant="outline" onClick={() => onEditIncome(income)}>Edit</Button></TableCell>
+                <TableCell className="text-right"><Button variant="outline" onClick={() => deleteIncome(income._id)}>Delete</Button></TableCell>
               </TableRow>
             ))}
           </TableBody>
