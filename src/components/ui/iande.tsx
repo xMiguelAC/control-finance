@@ -313,73 +313,7 @@ const handleSubmitE = useCallback(async (e: { preventDefault: () => void; target
 
 }, [formDataE]);
 
-// og 
-// const handleSubmitE = useCallback(async (e: { preventDefault: () => void; target: { id: string; }; }) => {
-//   e.preventDefault();
-//   if (isSubmittingRef.current) return;
-//   isSubmittingRef.current = true;
 
-//   setError('');
-
-//   // let updatedFormData = { ...formDataE };
-//   const uniqueInvoice = await generateUniqueInvoice(e.target.id);
-
-//   setFormDataE(prev => ({ ...prev, invoice: uniqueInvoice }));
-//   setRefreshKeyE(prevKey => prevKey + 1);
-//   console.log(formDataE)
-
-
-//     try {
-//       await submitExpense({ ...formDataE, invoice: uniqueInvoice });
-//     } finally {
-//       isSubmittingRef.current = false;
-//     }
-
-
-// }, [formDataE]);
-
-// next step: edit and delete a register
-
-// og
-// const submitExpense = async (formDataE: { invoice?: string; category?: string; totalAmount?: string; paymentMethod?: string; title?: string; date: any; }) => {
-//   try {
-//     const res = await fetch('/api/expenses', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
-//       },
-//       body: JSON.stringify({
-//         ...formDataE,
-//         date: new Date(formDataE.date)
-//       })
-//     });
-
-//     const data = await res.json();
-    
-//     if (!data.success) {
-//       throw new Error(data.message || 'Error al guardar el gasto');
-//     }
-
-//     // Restablecer el formulario
-//     setFormDataE({
-//       invoice: '',
-//       category: '',
-//       totalAmount: '',
-//       paymentMethod: '',
-//       title: '',
-//       date: new Date().toISOString().split('T')[0]
-//     });
-
-//     // Redireccionar o mostrar mensaje de éxito
-//     alert('Gasto guardado correctamente');
-
-//   } catch (error) {
-//     setError(error.message);
-//   }
-// };
-
-// sustituir
 const submitExpense = async (formDataE: { 
   id?: string; 
   invoice?: string; 
@@ -435,44 +369,6 @@ const submitExpense = async (formDataE: {
 
 // incomes submit -------------------------------------------------------------------------
 
-// const submitIncome = async (formDataI: { invoice?: string; category?: string; totalAmount?: string; paymentMethod?: string; title?: string; date: any }) => {
-//   try {
-//     const res = await fetch('/api/incomes', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
-//       },
-//       body: JSON.stringify({
-//         ...formDataI,
-//         date: new Date(formDataI.date)
-//       })
-//     });
-
-//     const data = await res.json();
-    
-//     if (!data.success) {
-//       throw new Error(data.message || 'Error al guardar el gasto');
-//     }
-
-//     // Restablecer el formulario
-//     setFormDataI({
-//       invoice: '',
-//       category: '',
-//       totalAmount: '',
-//       paymentMethod: '',
-//       title: '',
-//       date: new Date().toISOString().split('T')[0]
-//     });
-//     setDateI("");
-
-//     // Redireccionar o mostrar mensaje de éxito
-//     alert('Gasto guardado correctamente');
-
-//   } catch (error) {
-//     setError(error.message);
-//   }
-// };
 
 
 const submitIncome = async (formDataI: { 

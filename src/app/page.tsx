@@ -27,6 +27,7 @@ export default function Home() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="monthly">Monthly</TabsTrigger>
           <TabsTrigger value="iande">Income/Expenses</TabsTrigger>
+          <TabsTrigger value="account">Accounts</TabsTrigger>
           <TabsTrigger value="budget">Budget</TabsTrigger>
           <TabsTrigger value="fixed">Fixed</TabsTrigger>
           <TabsTrigger value="goal">Goals</TabsTrigger>
@@ -37,6 +38,7 @@ export default function Home() {
         <TabsContent value="monthly"><Monthlycard /></TabsContent>
         <TabsContent value="budget"><Budgetpage /></TabsContent>
         <TabsContent value="iande"><Iandeview /></TabsContent>
+        <TabsContent value="account"><Overview /></TabsContent>
         <TabsContent value="fixed"><Fixedview /></TabsContent>
         <TabsContent value="goal"><Goalview /></TabsContent>
         <TabsContent value="ahorros"><Budgetpage /></TabsContent>

@@ -105,7 +105,7 @@ export function ComponentPie() {
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Visitors
+                          Total Expenses
                         </tspan>
                       </text>
                     )
