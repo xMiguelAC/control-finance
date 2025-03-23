@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 
 
-export default function ExpenseList() {
+export default function ExpenseList( {onEditExpense} ) {
   const [expenses, setExpenses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -116,7 +116,7 @@ export default function ExpenseList() {
                 <TableCell>{expense.paymentMethod}</TableCell>
                 <TableCell>{expense.category}</TableCell>
                 <TableCell className="text-right">{expense.date.split("T")[0]}</TableCell>
-                <TableCell className="text-right"><Button variant="outline">Edit</Button></TableCell>
+                <TableCell className="text-right"><Button variant="outline" onClick={() => onEditExpense(expense)}>Edit</Button></TableCell>
                 <TableCell className="text-right"><Button variant="outline" onClick={() => deleteExpense(expense._id)}>Delete</Button></TableCell>
               </TableRow>
             ))}

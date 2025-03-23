@@ -100,8 +100,20 @@ function Iandeview() {
       date: income.date
     });
     setDateI(new Date(income.date));
+  };
 
+  const handleEditExpense = (expense) => {
 
+    setFormDataE({
+      id: expense._id,
+      invoice: expense.invoice,
+      category: expense.category,
+      totalAmount: expense.totalAmount,
+      paymentMethod: expense.paymentMethod,
+      title: expense.title,
+      date: expense.date
+    });
+    setDateE(new Date(expense.date));
   };
 
  
@@ -180,6 +192,7 @@ const [formDataI, setFormDataI] = useState({
 });
 
 const [formDataE, setFormDataE] = useState({
+  id: '',
   invoice: '',
   category: '',
   totalAmount: '',
@@ -245,26 +258,6 @@ const handleChangeE = (e: { target: any; }) => {
 
 const isSubmittingRef = useRef(false);
 
-// const handleSubmitI = useCallback(async (e: { preventDefault: () => void; target: { id: string; }; }) => {
-//   e.preventDefault();
-//   if (isSubmittingRef.current) return;
-//   isSubmittingRef.current = true;
-
-//   setError('');
-//   const uniqueInvoice = await generateUniqueInvoice(e.target.id);
-
-//   setFormDataI(prev => ({ ...prev, invoice: uniqueInvoice }));
-//   setRefreshKeyI(prevKey => prevKey + 1);
-//   console.log(formDataI)
-
-//     try {
-//       await submitIncome({ ...formDataI, invoice: uniqueInvoice });
-//     } finally {
-//       isSubmittingRef.current = false;
-//     }
-
-// }, [formDataI]);
-
 const handleSubmitI = useCallback(async (e: { preventDefault: () => void; target: { id: string; }; }) => {
   e.preventDefault();
   if (isSubmittingRef.current) return;
@@ -292,35 +285,117 @@ const handleSubmitI = useCallback(async (e: { preventDefault: () => void; target
 
 }, [formDataI]);
 
-
+// sustituir
 const handleSubmitE = useCallback(async (e: { preventDefault: () => void; target: { id: string; }; }) => {
   e.preventDefault();
   if (isSubmittingRef.current) return;
   isSubmittingRef.current = true;
 
   setError('');
-  const uniqueInvoice = await generateUniqueInvoice(e.target.id);
+  
+  let updatedFormData = { ...formDataE };
 
-  setFormDataE(prev => ({ ...prev, invoice: uniqueInvoice }));
+  if (!formDataE.id) {
+    // Si no hay ID, es un nuevo registro
+    const uniqueInvoice = await generateUniqueInvoice(e.target.id);
+    updatedFormData = { ...updatedFormData, invoice: uniqueInvoice };
+  }
+
+  setFormDataE(updatedFormData);
   setRefreshKeyE(prevKey => prevKey + 1);
-  console.log(formDataE)
+  console.log(updatedFormData);
 
-
-    try {
-      await submitExpense({ ...formDataE, invoice: uniqueInvoice });
-    } finally {
-      isSubmittingRef.current = false;
-    }
-
+  try {
+    await submitExpense(updatedFormData);
+  } finally {
+    isSubmittingRef.current = false;
+  }
 
 }, [formDataE]);
 
+// og 
+// const handleSubmitE = useCallback(async (e: { preventDefault: () => void; target: { id: string; }; }) => {
+//   e.preventDefault();
+//   if (isSubmittingRef.current) return;
+//   isSubmittingRef.current = true;
+
+//   setError('');
+
+//   // let updatedFormData = { ...formDataE };
+//   const uniqueInvoice = await generateUniqueInvoice(e.target.id);
+
+//   setFormDataE(prev => ({ ...prev, invoice: uniqueInvoice }));
+//   setRefreshKeyE(prevKey => prevKey + 1);
+//   console.log(formDataE)
+
+
+//     try {
+//       await submitExpense({ ...formDataE, invoice: uniqueInvoice });
+//     } finally {
+//       isSubmittingRef.current = false;
+//     }
+
+
+// }, [formDataE]);
+
 // next step: edit and delete a register
 
-const submitExpense = async (formDataE: { invoice?: string; category?: string; totalAmount?: string; paymentMethod?: string; title?: string; date: any; }) => {
+// og
+// const submitExpense = async (formDataE: { invoice?: string; category?: string; totalAmount?: string; paymentMethod?: string; title?: string; date: any; }) => {
+//   try {
+//     const res = await fetch('/api/expenses', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
+//       },
+//       body: JSON.stringify({
+//         ...formDataE,
+//         date: new Date(formDataE.date)
+//       })
+//     });
+
+//     const data = await res.json();
+    
+//     if (!data.success) {
+//       throw new Error(data.message || 'Error al guardar el gasto');
+//     }
+
+//     // Restablecer el formulario
+//     setFormDataE({
+//       invoice: '',
+//       category: '',
+//       totalAmount: '',
+//       paymentMethod: '',
+//       title: '',
+//       date: new Date().toISOString().split('T')[0]
+//     });
+
+//     // Redireccionar o mostrar mensaje de éxito
+//     alert('Gasto guardado correctamente');
+
+//   } catch (error) {
+//     setError(error.message);
+//   }
+// };
+
+// sustituir
+const submitExpense = async (formDataE: { 
+  id?: string; 
+  invoice?: string; 
+  category?: string; 
+  totalAmount?: string; 
+  paymentMethod?: string; 
+  title?: string; 
+  date: any 
+}) => {
+
   try {
-    const res = await fetch('/api/expenses', {
-      method: 'POST',
+    const method = formDataE.id ? 'PUT' : 'POST'; // Si hay ID, se actualiza; si no, se crea nuevo
+    const endpoint = formDataE.id ? `/api/expenses/${formDataE.id}` : '/api/expenses';
+
+    const res = await fetch(endpoint, {
+      method,
       headers: {
         'Content-Type': 'application/json',
         'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
@@ -332,23 +407,25 @@ const submitExpense = async (formDataE: { invoice?: string; category?: string; t
     });
 
     const data = await res.json();
-    
+
     if (!data.success) {
-      throw new Error(data.message || 'Error al guardar el gasto');
+      throw new Error(data.message || 'Error al guardar el ingreso');
     }
 
-    // Restablecer el formulario
-    setFormDataE({
-      invoice: '',
-      category: '',
-      totalAmount: '',
-      paymentMethod: '',
-      title: '',
-      date: new Date().toISOString().split('T')[0]
-    });
+    // Restablecer el formulario solo si es un nuevo registro
+      setFormDataE({
+        id: '',
+        invoice: '',
+        category: '',
+        totalAmount: '',
+        paymentMethod: '',
+        title: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+      setDateE("");
 
     // Redireccionar o mostrar mensaje de éxito
-    alert('Gasto guardado correctamente');
+    alert(formDataE.id ? 'Ingreso actualizado correctamente' : 'Ingreso guardado correctamente');
 
   } catch (error) {
     setError(error.message);
@@ -433,6 +510,7 @@ const submitIncome = async (formDataI: {
     // Restablecer el formulario solo si es un nuevo registro
     // if (!formDataI.id) {
       setFormDataI({
+        id: '',
         invoice: '',
         category: '',
         totalAmount: '',
@@ -591,7 +669,6 @@ const submitIncome = async (formDataI: {
           <CardFooter className="flex justify-between">
             <Button variant="outline" onClick={() => handleClear("I")}>Clear</Button>
             <Button onClick={handleSubmitI} type="submit" id="incomes">{formDataI.id?"Edit":"Add"}</Button>
-            {/* <Button onClick={handleSubmitI} type="submit" id="incomes">Add</Button> */}
           </CardFooter>
         </Card>
 
@@ -709,13 +786,13 @@ const submitIncome = async (formDataI: {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" onClick={() => handleClear("E")}>Clear</Button>
-            <Button onClick={handleSubmitE} type="submit" id="expenses">Add</Button>
+            <Button onClick={handleSubmitE} type="submit" id="expenses">{formDataE.id?"Edit":"Add"}</Button>
           </CardFooter>
         </Card>
 
         
 
-        <ExpenseList key={refreshKeyE}/>
+        <ExpenseList key={refreshKeyE} onEditExpense={handleEditExpense}/>
         
 
         </div>
