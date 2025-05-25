@@ -122,9 +122,10 @@ function Iandeview() {
 
 
   const handleClearI = () => {
-    document.getElementById("titleI").value = ""
-    document.getElementById("amountI").value = ""
+    document.getElementById("titleI")?.setAttribute("value", "");
+    document.getElementById("amountI")?.setAttribute("value", "");
     setFormDataI({
+      id: '',
       invoice: '',
       title: '',
       totalAmount: '',
@@ -136,17 +137,18 @@ function Iandeview() {
   }
 
   const handleClearE = () => {
-    document.getElementById("titleE").value = ""
-    document.getElementById("amountE").value = ""  
+    document.getElementById("titleE")?.setAttribute("value", "");
+    document.getElementById("amountE")?.setAttribute("value", "");  
     setFormDataE({
+      id: '',
       invoice: '',
       title: '',
       totalAmount: '',
       paymentMethod: '',
       category: '',
-      date: ''
+      date: new Date().toISOString()
     }); 
-    setDateE("")   
+    setDateE("");   
   }
   
 
@@ -188,7 +190,7 @@ const [formDataI, setFormDataI] = useState({
   totalAmount: '',
   paymentMethod: '',
   title: '',
-  date: new Date().toISOString().split('T')[0]
+  date: ''
 });
 
 const [formDataE, setFormDataE] = useState({
@@ -198,7 +200,7 @@ const [formDataE, setFormDataE] = useState({
   totalAmount: '',
   paymentMethod: '',
   title: '',
-  date: new Date().toISOString().split('T')[0]
+  date: ''
 });
 
 
@@ -238,22 +240,43 @@ const handleChangeSelectCI = (val: unknown) => {
 
 
 const handleChangeI = (e: { target: any; }) => {
-  console.log(e)
+  // console.log(e)
   const { name, value } = e.target;
   setFormDataI(prev => ({
     ...prev,
     [name]: value
   }));
-  console.log(formDataI)
 };
 
 const handleChangeE = (e: { target: any; }) => {
-  console.log(e)
+  // console.log(e)
   const { name, value } = e.target;
   setFormDataE(prev => ({
     ...prev,
     [name]: value
   }));
+};
+
+// Agregar esta nueva función para manejar el cambio de fecha
+const handleDateChangeE = (date: Date | undefined) => {
+  if (date) {
+    setDateE(date);
+    setFormDataE(prev => ({
+      ...prev,
+      date: date.toISOString()
+    }));
+  }
+};
+
+// Agregar esta nueva función para manejar el cambio de fecha
+const handleDateChangeI = (date: Date | undefined) => {
+  if (date) {
+    setDateI(date);
+    setFormDataI(prev => ({
+      ...prev,
+      date: date.toISOString()
+    }));
+  }
 };
 
 const isSubmittingRef = useRef(false);
@@ -270,7 +293,11 @@ const handleSubmitI = useCallback(async (e: { preventDefault: () => void; target
   if (!formDataI.id) {
     // Si no hay ID, es un nuevo registro
     const uniqueInvoice = await generateUniqueInvoice(e.target.id);
-    updatedFormData = { ...updatedFormData, invoice: uniqueInvoice };
+    updatedFormData = { 
+      ...updatedFormData, 
+      invoice: uniqueInvoice, 
+      date: dateI.toISOString() // Convertir la fecha a string ISO
+    };
   }
 
   setFormDataI(updatedFormData);
@@ -283,7 +310,7 @@ const handleSubmitI = useCallback(async (e: { preventDefault: () => void; target
     isSubmittingRef.current = false;
   }
 
-}, [formDataI]);
+}, [formDataI, dateI]);
 
 // sustituir
 const handleSubmitE = useCallback(async (e: { preventDefault: () => void; target: { id: string; }; }) => {
@@ -298,7 +325,11 @@ const handleSubmitE = useCallback(async (e: { preventDefault: () => void; target
   if (!formDataE.id) {
     // Si no hay ID, es un nuevo registro
     const uniqueInvoice = await generateUniqueInvoice(e.target.id);
-    updatedFormData = { ...updatedFormData, invoice: uniqueInvoice };
+    updatedFormData = { 
+      ...updatedFormData, 
+      invoice: uniqueInvoice, 
+      date: dateE.toISOString() // Convertir la fecha a string ISO
+    };
   }
 
   setFormDataE(updatedFormData);
@@ -311,7 +342,7 @@ const handleSubmitE = useCallback(async (e: { preventDefault: () => void; target
     isSubmittingRef.current = false;
   }
 
-}, [formDataE]);
+}, [formDataE, dateE]);
 
 
 const submitExpense = async (formDataE: { 
@@ -321,47 +352,41 @@ const submitExpense = async (formDataE: {
   totalAmount?: string; 
   paymentMethod?: string; 
   title?: string; 
-  date: any 
+  date: string 
 }) => {
-
   try {
-    const method = formDataE.id ? 'PUT' : 'POST'; // Si hay ID, se actualiza; si no, se crea nuevo
+    const method = formDataE.id ? 'PUT' : 'POST';
     const endpoint = formDataE.id ? `/api/expenses/${formDataE.id}` : '/api/expenses';
 
     const res = await fetch(endpoint, {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
+        'user-id': 'ID-DEL-USUARIO'
       },
-      body: JSON.stringify({
-        ...formDataE,
-        date: new Date(formDataE.date)
-      })
+      body: JSON.stringify(formDataE)
     });
 
     const data = await res.json();
 
     if (!data.success) {
-      throw new Error(data.message || 'Error al guardar el ingreso');
+      throw new Error(data.message || 'Error al guardar el gasto');
     }
 
-    // Restablecer el formulario solo si es un nuevo registro
-      setFormDataE({
-        id: '',
-        invoice: '',
-        category: '',
-        totalAmount: '',
-        paymentMethod: '',
-        title: '',
-        date: new Date().toISOString().split('T')[0]
-      });
-      setDateE("");
+    setFormDataE({
+      id: '',
+      invoice: '',
+      category: '',
+      totalAmount: '',
+      paymentMethod: '',
+      title: '',
+      date: new Date().toISOString()
+    });
+    setDateE("");
 
-    // Redireccionar o mostrar mensaje de éxito
-    alert(formDataE.id ? 'Ingreso actualizado correctamente' : 'Ingreso guardado correctamente');
+    alert(formDataE.id ? 'Gasto actualizado correctamente' : 'Gasto guardado correctamente');
 
-  } catch (error) {
+  } catch (error: any) {
     setError(error.message);
   }
 };
@@ -391,10 +416,7 @@ const submitIncome = async (formDataI: {
         'Content-Type': 'application/json',
         'user-id': 'ID-DEL-USUARIO' // Reemplazar con el ID real del usuario
       },
-      body: JSON.stringify({
-        ...formDataI,
-        date: new Date(formDataI.date)
-      })
+      body: JSON.stringify(formDataI)
     });
 
     const data = await res.json();
@@ -412,7 +434,8 @@ const submitIncome = async (formDataI: {
         totalAmount: '',
         paymentMethod: '',
         title: '',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString()
+        // date: new Date().toISOString().split('T')[0]
       });
       setDateI("");
     // }
@@ -552,7 +575,7 @@ const submitIncome = async (formDataI: {
                         <Calendar
                           mode="single"
                           selected={dateI}
-                          onSelect={setDateI}
+                          onSelect={handleDateChangeI}
                           initialFocus
                         />
                       </PopoverContent>
@@ -654,6 +677,7 @@ const submitIncome = async (formDataI: {
                         id="dateE"
                         name="date"
                         value={formDataE.date}
+                        // onChange={() => {console.log(dateE)}}
                         onChange={handleChangeE}
                           variant={"outline"}
                           className={cn(
@@ -669,7 +693,7 @@ const submitIncome = async (formDataI: {
                         <Calendar
                           mode="single"
                           selected={dateE}
-                          onSelect={setDateE}
+                          onSelect={handleDateChangeE}
                           initialFocus
                         />
                       </PopoverContent>

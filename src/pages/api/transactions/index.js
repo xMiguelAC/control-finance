@@ -1,75 +1,57 @@
-// import connectToDatabase from '../../../lib/mongodb';
-
-// export default async function handler(req, res) {
-//   if (req.method !== "GET") {
-//     return res.status(405).json({ success: false, message: "Método no permitido" });
-//   }
-
-//   try {
-//     const { db } = await connectToDatabase();
-
-//     // Obtener todos los ingresos y gastos
-//     const transactions = await db.collection("transactions").find({}).toArray();
-
-//     res.status(200).json({
-//       success: true,
-//       transactions,
-//     });
-//   } catch (error) {
-//     console.error("Error al obtener transacciones:", error);
-//     res.status(500).json({ success: false, message: "Error en el servidor" });
-//   }
-// }
-
 import connectToDatabase from '../../../lib/mongodb';
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ success: false, message: "Método no permitido" });
+  if (req.method !== 'GET') {
+    return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
   try {
     const { db } = await connectToDatabase();
 
-    // Obtener ingresos y gastos de la base de datos
-    const incomes = await db.collection("incomes").find({}).toArray();
-    const expenses = await db.collection("expenses").find({}).toArray();
-
-    // Función para agrupar por mes
-    const groupByMonth = (transactions, type) => {
-      return transactions.reduce((acc, item) => {
-        const monthName = new Date(item.date).toLocaleString("es-ES", { month: "long" });
-
-        if (!acc[monthName]) {
-          acc[monthName] = { month: monthName, income: 0, expense: 0 };
+    const monthlyExpenses = await db.collection('Expenses').aggregate([
+      {
+        $project: {
+          year: { $year: "$date" },
+          month: { $month: "$date" },
+          totalAmount: 1
         }
+      },
+      {
+        $group: {
+          _id: { year: "$year", month: "$month" },
+          total: { $sum: "$totalAmount" },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: {
+          "_id.year": 1,
+          "_id.month": 1
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          year: "$_id.year",
+          month: "$_id.month",
+          total: { $round: ["$total", 2] },
+          count: 1
+        }
+      }
+    ]).toArray();
 
-        acc[monthName][type] += item.amount;
-        return acc;
-      }, {});
-    };
 
-    // Agrupar ingresos y gastos por mes
-    const incomeData = groupByMonth(incomes, "income");
-    const expenseData = groupByMonth(expenses, "expense");
+    return res.status(200).json({
+      success: true,
+      data: monthlyExpenses
+    });
 
-    // Fusionar datos de ingresos y gastos
-    const monthsOrdered = [
-      "enero", "febrero", "marzo", "abril", "mayo", "junio",
-      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
-    ];
-
-    const mergedData = monthsOrdered.map(month => ({
-      month,
-      income: incomeData[month]?.income || 0,
-      expense: expenseData[month]?.expense || 0
-    }));
-
-    res.status(200).json({ success: true, transactions: mergedData });
-
-  } catch (error) {
-    console.error("Error al obtener transacciones:", error);
-    res.status(500).json({ success: false, message: "Error en el servidor" });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Error al cargar los datos';
+    return res.status(500).json({ 
+      success: false,
+      message: 'Error fetching monthly expenses: ' + err.message,
+      error: errorMessage
+    });
   }
 }
-
