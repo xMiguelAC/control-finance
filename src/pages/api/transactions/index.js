@@ -40,10 +40,43 @@ export default async function handler(req, res) {
       }
     ]).toArray();
 
+    // Agregar incomes mensuales
+    const monthlyIncomes = await db.collection('incomes').aggregate([
+      {
+        $project: {
+          year: { $year: "$date" },
+          month: { $month: "$date" },
+          totalAmount: 1
+        }
+      },
+      {
+        $group: {
+          _id: { year: "$year", month: "$month" },
+          total: { $sum: "$totalAmount" },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: {
+          "_id.year": 1,
+          "_id.month": 1
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          year: "$_id.year",
+          month: "$_id.month",
+          total: { $round: ["$total", 2] },
+          count: 1
+        }
+      }
+    ]).toArray();
 
     return res.status(200).json({
       success: true,
-      data: monthlyExpenses
+      expenses: monthlyExpenses,
+      incomes: monthlyIncomes
     });
 
   } catch (err) {

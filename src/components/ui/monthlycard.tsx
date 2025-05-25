@@ -1,10 +1,20 @@
-'use client'
-import React, { useEffect, useState } from 'react'
-import Cardmonth from './cardmonth'
+"use client";
+import React, { useEffect, useState } from "react";
+import Cardmonth from "./cardmonth";
 
 const monthNames = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 interface MonthlyData {
@@ -15,23 +25,31 @@ interface MonthlyData {
 }
 
 function Monthlycard() {
-  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [monthlyData, setMonthlyData] = useState<{
+    expenses: MonthlyData[];
+    incomes: MonthlyData[];
+  }>({ expenses: [], incomes: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMonthlyData = async () => {
       try {
-        const response = await fetch('/api/transactions');
+        const response = await fetch("/api/transactions");
         const data = await response.json();
-        
+
         if (!data.success) {
-          throw new Error(data.message || 'Error al obtener los datos');
+          throw new Error(data.message || "Error al obtener los datos");
         }
 
-        setMonthlyData(data.data);
+        setMonthlyData({
+          expenses: data.expenses,
+          incomes: data.incomes,
+        });
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error al cargar los datos');
+        setError(
+          err instanceof Error ? err.message : "Error al cargar los datos"
+        );
       } finally {
         setLoading(false);
       }
@@ -40,20 +58,31 @@ function Monthlycard() {
     fetchMonthlyData();
   }, []);
 
-  // Crear un array con todos los meses del año actual
+  // Crear un array con todos los meses del año actual y asignar income/expense
   const currentYear = new Date().getFullYear();
   const allMonths = Array.from({ length: 12 }, (_, index) => ({
     month: monthNames[index],
     income: "0",
-    expense: "0"
+    expense: "0",
   }));
 
-  // Actualizar los datos con la información de la API
-  monthlyData.forEach(data => {
-    if (data.year === currentYear) {
-      allMonths[data.month - 1].expense = data.total.toString();
-    }
-  });
+  // Asignar expenses
+  if (monthlyData.expenses) {
+    monthlyData.expenses.forEach((data: MonthlyData) => {
+      if (data.year === currentYear) {
+        allMonths[data.month - 1].expense = data.total.toString();
+      }
+    });
+  }
+
+  // Asignar incomes
+  if (monthlyData.incomes) {
+    monthlyData.incomes.forEach((data: MonthlyData) => {
+      if (data.year === currentYear) {
+        allMonths[data.month - 1].income = data.total.toString();
+      }
+    });
+  }
 
   if (loading) {
     return <div className="text-center">Cargando datos mensuales...</div>;
@@ -66,15 +95,15 @@ function Monthlycard() {
   return (
     <div className="grid grid-cols-4 gap-8 my-8 w-full">
       {allMonths.map(({ month, income, expense }) => (
-        <Cardmonth 
-          key={month} 
-          month={month} 
-          income={income} 
-          expense={expense} 
+        <Cardmonth
+          key={month}
+          month={month}
+          income={income}
+          expense={expense}
         />
       ))}
     </div>
-  )
+  );
 }
 
-export default Monthlycard
+export default Monthlycard;
